@@ -12,62 +12,96 @@
   <title>LazyMan Ironman</title>
 </head>
 
-<body class="bg-slate-100 text-slate-900">
-
+<body class="bg-slate-100 text-slate-900 antialiased">
+  
 <div class="max-w-6xl mx-auto p-4 space-y-6">
 
   <!-- HERO -->
-  <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
-    <h1 class="text-3xl font-bold">🏆 LazyMan Ironman</h1>
-    <p class="opacity-90">Real-time endurance challenge</p>
+<div class="bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white p-6 rounded-2xl shadow-lg">
+  <div class="flex justify-between items-start">
+    
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">🏆 LazyMan Ironman</h1>
+      <p class="opacity-90 mt-1">Real-time endurance challenge</p>
 
-    <div class="mt-4">
-      <p class="text-sm opacity-80">Current Leader</p>
-      <p id="leaderName" class="text-2xl font-bold">—</p>
-      <p id="leaderPct" class="text-sm opacity-90">—</p>
+      <div class="mt-5">
+        <p class="text-xs uppercase tracking-wider opacity-70">Current Leader</p>
+        <p id="leaderName" class="text-2xl font-bold leading-tight">—</p>
+        <p id="leaderPct" class="text-sm opacity-90">—</p>
+      </div>
     </div>
+
+    <div class="text-right">
+      <p class="text-xs uppercase tracking-wider opacity-70">Group Distance</p>
+      <p id="groupMiles" class="text-2xl font-bold">0</p>
+      <p class="text-xs opacity-80">total miles</p>
+    </div>
+
   </div>
+</div>
 
   <!-- TOP 3 PODIUM -->
-  <div id="podium" class="grid md:grid-cols-3 gap-4"></div>
-
+<div id="podium" class="grid md:grid-cols-3 gap-4"></div>
+  
   <!-- GROUP JOURNEY -->
-  <div class="bg-white p-4 rounded-2xl shadow">
-    <h2 class="font-semibold mb-2">🌍 Group Journey</h2>
-    <div class="w-full bg-slate-200 rounded-full h-3">
-      <div id="worldBar" class="bg-indigo-500 h-3 rounded-full transition-all duration-500" style="width:0%"></div>
-    </div>
-    <p class="text-xs text-slate-500 mt-2">
-      Collective miles across swim, bike, run
-    </p>
+<div class="bg-white p-4 rounded-2xl shadow">
+  <h2 class="font-semibold mb-2">🌍 Group Journey</h2>
+
+  <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+    <div id="worldBar"
+         class="bg-indigo-500 h-3 rounded-full transition-all duration-700 ease-out"
+         style="width:0%"></div>
   </div>
+
+  <p class="text-xs text-slate-500 mt-2">
+    Collective swim + bike + run progress
+  </p>
+</div>
 
   <!-- DISCIPLINES -->
   <div class="grid md:grid-cols-3 gap-4">
 
-    <div class="bg-white p-4 rounded-2xl shadow">
-      <h3 class="font-bold text-sky-600">🏊 Swim</h3>
-      <p id="swimText" class="text-sm text-slate-600 mt-1"></p>
-      <div class="w-full bg-slate-200 h-2 rounded mt-2">
-        <div id="swimBar" class="bg-sky-500 h-2 rounded transition-all duration-500"></div>
-      </div>
-    </div>
+<div class="bg-white p-5 rounded-2xl shadow hover:shadow-md transition">
+  <div class="flex justify-between items-center">
+    <h3 class="font-bold text-sky-600">🏊 Swim</h3>
+    <span class="text-xs text-slate-400">meters</span>
+  </div>
 
-    <div class="bg-white p-4 rounded-2xl shadow">
-      <h3 class="font-bold text-emerald-600">🚴 Bike</h3>
-      <p id="bikeText" class="text-sm text-slate-600 mt-1"></p>
-      <div class="w-full bg-slate-200 h-2 rounded mt-2">
-        <div id="bikeBar" class="bg-emerald-500 h-2 rounded transition-all duration-500"></div>
-      </div>
-    </div>
+  <p id="swimText" class="text-lg font-semibold mt-2"></p>
 
-    <div class="bg-white p-4 rounded-2xl shadow">
-      <h3 class="font-bold text-orange-600">🏃 Run</h3>
-      <p id="runText" class="text-sm text-slate-600 mt-1"></p>
-      <div class="w-full bg-slate-200 h-2 rounded mt-2">
-        <div id="runBar" class="bg-orange-500 h-2 rounded transition-all duration-500"></div>
-      </div>
-    </div>
+  <div class="w-full bg-slate-200 h-2 rounded mt-3 overflow-hidden">
+    <div id="swimBar"
+         class="bg-sky-500 h-2 rounded transition-all duration-700"></div>
+  </div>
+</div>
+
+<div class="bg-green p-5 rounded-2xl shadow hover:shadow-md transition">
+  <div class="flex justify-between items-center">
+    <h3 class="font-bold text-sky-600">🏊 Bike</h3>
+    <span class="text-xs text-slate-400">miles</span>
+  </div>
+
+  <p id="bikeText" class="text-lg font-semibold mt-2"></p>
+
+  <div class="w-full bg-slate-200 h-2 rounded mt-3 overflow-hidden">
+    <div id="bikeBar"
+         class="bg-sky-500 h-2 rounded transition-all duration-700"></div>
+  </div>
+</div>
+
+<div class="bg-orange p-5 rounded-2xl shadow hover:shadow-md transition">
+  <div class="flex justify-between items-center">
+    <h3 class="font-bold text-sky-600">🏊 Run</h3>
+    <span class="text-xs text-slate-400">miles</span>
+  </div>
+
+  <p id="runText" class="text-lg font-semibold mt-2"></p>
+
+  <div class="w-full bg-slate-200 h-2 rounded mt-3 overflow-hidden">
+    <div id="runBar"
+         class="bg-sky-500 h-2 rounded transition-all duration-700"></div>
+  </div>
+</div>
 
   </div>
 
@@ -216,16 +250,26 @@ function render() {
     percent(data[sorted[0]]).toFixed(1) + "% complete";
 
   /* PODIUM */
-  const podium = document.getElementById("podium");
+  const podium = document.getElementById("podium").innerHTML =
+sorted.slice(0,3).map((n,i)=>`
+  <div class="bg-white p-5 rounded-2xl shadow text-center transform hover:scale-[1.02] transition">
 
-  podium.innerHTML = sorted.slice(0,3).map((n,i)=>`
-    <div class="bg-white p-4 rounded-2xl shadow text-center border-t-4
-      ${i===0?'border-yellow-400':i===1?'border-gray-400':'border-orange-400'}">
-
-      <p class="text-lg font-bold">${i===0?'🥇':i===1?'🥈':'🥉'} ${n}</p>
-      <p class="text-indigo-600 font-bold">${percent(data[n]).toFixed(1)}%</p>
+    <div class="text-2xl">
+      ${i===0?'🥇':i===1?'🥈':'🥉'}
     </div>
-  `).join("");
+
+    <p class="font-bold text-lg mt-1">${n}</p>
+
+    <p class="text-indigo-600 font-semibold">
+      ${percent(data[n]).toFixed(1)}%
+    </p>
+
+    <div class="mt-2 text-xs text-slate-500">
+      ${data[n].swim.toFixed(0)}m swim • ${data[n].bike.toFixed(0)}mi bike • ${data[n].run.toFixed(1)}mi run
+    </div>
+
+  </div>
+`).join("");
 
   /* GROUP TOTAL */
   let total = Object.values(data)
@@ -251,8 +295,13 @@ function render() {
     `${me.run.toFixed(1)} / 26.2 mi`;
 
   /* FEED */
-  document.getElementById("feed").innerHTML =
-    feed.slice().reverse().map(f=>`<div>• ${f}</div>`).join("");
+document.getElementById("feed").innerHTML =
+feed.slice().reverse().map(f=>`
+  <div class="flex items-center justify-between py-2 border-b border-slate-100">
+    <span class="text-slate-700">${f}</span>
+    <span class="text-xs text-slate-400">now</span>
+  </div>
+`).join("");
 
   /* LEADERBOARD (full) */
   document.getElementById("leaderboard").innerHTML = sorted.map(n=>`
