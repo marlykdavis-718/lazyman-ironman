@@ -1,6 +1,8 @@
-# LazyMan Ironman V7 Fixed
+# LazyMan Ironman V7 Save Fix
 
-This is the fixed V7 package. It removes the bad leading character that prevented app.js from running.
+This fixes activity saving so new workouts update both:
+- the live activity feed
+- the matching athlete card totals
 
 Upload and replace:
 - index.html

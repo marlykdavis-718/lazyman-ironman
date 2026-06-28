@@ -619,14 +619,29 @@ async function addActivity() {
     createdAt: new Date().toISOString()
   };
 
-  const fieldPath = `members.${member}.${selectedType}`;
-
   try {
-    await GROUP_DOC.set({
-      [fieldPath]: firebase.firestore.FieldValue.increment(distance),
-      feed: firebase.firestore.FieldValue.arrayUnion(entry),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    await db.runTransaction(async transaction => {
+      const snap = await transaction.get(GROUP_DOC);
+      const current = snap.exists ? snap.data() : {};
+      const members = current.members || {};
+      const feed = Array.isArray(current.feed) ? current.feed : [];
+
+      PARTICIPANTS.forEach(p => {
+        if (!members[p.name]) members[p.name] = { swim: 0, bike: 0, run: 0 };
+        ["swim", "bike", "run"].forEach(type => {
+          if (typeof members[p.name][type] !== "number") members[p.name][type] = 0;
+        });
+      });
+
+      members[member][selectedType] += distance;
+      feed.push(entry);
+
+      transaction.set(GROUP_DOC, {
+        members,
+        feed: feed.slice(-250),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    });
 
     distanceInput.value = "";
     message.textContent = `${member}'s ${selectedType} was added.`;
