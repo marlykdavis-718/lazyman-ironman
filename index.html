@@ -130,9 +130,9 @@ const db = firebase.firestore();
 ========================= */
 
 const GOALS = {
-  swim: 2.4,
-  bike: 112,
-  run: 26.2
+  swim: 3860,   // meters
+  bike: 112,    // miles
+  run: 26.2     // miles
 };
 
 /* =========================
@@ -242,7 +242,7 @@ function render() {
   document.getElementById("runBar").style.width = (me.run/GOALS.run*100)+"%";
 
   document.getElementById("swimText").innerText =
-    `${me.swim.toFixed(1)} / 2.4 mi`;
+  `${me.swim.toFixed(0)} / 3860 m`;
 
   document.getElementById("bikeText").innerText =
     `${me.bike.toFixed(1)} / 112 mi`;
