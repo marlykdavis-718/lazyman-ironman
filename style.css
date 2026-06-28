@@ -1,3 +1,4 @@
+\
 .hero-pattern {
   background-image:
     radial-gradient(circle at 20% 20%, rgba(255,255,255,.7) 0 2px, transparent 3px),
@@ -40,4 +41,8 @@
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 35px rgba(15, 23, 42, .10);
+}
+
+.no-scroll {
+  overflow: hidden;
 }

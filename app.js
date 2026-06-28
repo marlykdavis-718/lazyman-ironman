@@ -1,3 +1,4 @@
+\
 /* =========================
    Firebase
 ========================= */
@@ -75,6 +76,7 @@ let state = {
 };
 
 let selectedType = "swim";
+let activeProfile = null;
 
 /* =========================
    Helpers
@@ -125,15 +127,55 @@ function totalMilesEquivalent() {
   }, 0);
 }
 
+function activityMilesEquivalent(entry) {
+  if (!entry || typeof entry === "string") return 0;
+  if (entry.type === "swim") return (entry.distance || 0) / M_PER_MILE;
+  return entry.distance || 0;
+}
+
 function sortedParticipants() {
   return [...PARTICIPANTS].sort((a, b) => {
     return completionPercent(state.members[b.name]) - completionPercent(state.members[a.name]);
   });
 }
 
+function entryDate(entry) {
+  if (!entry || typeof entry === "string" || !entry.createdAt) return null;
+  if (entry.createdAt.toDate) return entry.createdAt.toDate();
+  return new Date(entry.createdAt);
+}
+
+function isThisWeek(date) {
+  if (!date || Number.isNaN(date.getTime())) return false;
+  const now = new Date();
+  const start = new Date(now);
+  const day = start.getDay();
+  const diff = (day === 0 ? -6 : 1) - day; // Monday start
+  start.setDate(start.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+  return date >= start;
+}
+
+function weeklyTotalsByPerson() {
+  const totals = {};
+  PARTICIPANTS.forEach(p => totals[p.name] = { miles: 0, activities: 0 });
+
+  (state.feed || []).forEach(entry => {
+    if (typeof entry === "string") return;
+    const date = entryDate(entry);
+    if (!isThisWeek(date)) return;
+    if (!totals[entry.member]) totals[entry.member] = { miles: 0, activities: 0 };
+    totals[entry.member].miles += activityMilesEquivalent(entry);
+    totals[entry.member].activities += 1;
+  });
+
+  return totals;
+}
+
 function timeLabel(timestamp) {
   if (!timestamp) return "just now";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "recently";
   return date.toLocaleString([], {
     month: "short",
     day: "numeric",
@@ -144,6 +186,37 @@ function timeLabel(timestamp) {
 
 function iconFor(type) {
   return type === "swim" ? "🏊" : type === "bike" ? "🚴" : "🏃";
+}
+
+function actionWord(type) {
+  return type === "swim" ? "swam" : type === "bike" ? "rode" : "ran";
+}
+
+function completedMilestonesForMember(member) {
+  const hits = [];
+  Object.keys(MILESTONES).forEach(type => {
+    MILESTONES[type].forEach(ms => {
+      if ((member[type] || 0) >= ms.distance) {
+        hits.push({ type, label: ms.label, distance: ms.distance });
+      }
+    });
+  });
+  return hits;
+}
+
+function nextMilestonesForMember(member) {
+  const next = [];
+  Object.keys(MILESTONES).forEach(type => {
+    const found = MILESTONES[type].find(ms => (member[type] || 0) < ms.distance);
+    if (found) {
+      next.push({
+        type,
+        label: found.label,
+        remaining: found.distance - (member[type] || 0)
+      });
+    }
+  });
+  return next;
 }
 
 /* =========================
@@ -176,6 +249,8 @@ GROUP_DOC.onSnapshot(snapshot => {
 
   ensureAllUsers();
   render();
+
+  if (activeProfile) renderProfile(activeProfile);
 });
 
 initializeDocumentIfNeeded();
@@ -188,6 +263,7 @@ function render() {
   renderHero();
   renderPodium();
   renderJourney();
+  renderWeeklyStats();
   renderAthletes();
   renderMilestones();
   renderFeed();
@@ -198,13 +274,16 @@ function renderHero() {
   const leader = sorted[0];
   const leaderMember = state.members[leader.name];
   const totalMiles = totalMilesEquivalent();
+  const weekly = weeklyTotalsByPerson();
+  const weeklySorted = [...PARTICIPANTS].sort((a,b) => weekly[b.name].miles - weekly[a.name].miles);
+  const weeklyLeader = weeklySorted[0];
 
   document.getElementById("leaderAvatar").textContent = leader.name[0];
   document.getElementById("leaderAvatar").style.background = leader.hex;
   document.getElementById("leaderName").textContent = leader.name;
   document.getElementById("leaderPct").textContent = `${formatNumber(completionPercent(leaderMember), 1)}% complete`;
   document.getElementById("groupMiles").textContent = formatNumber(totalMiles, 1);
-  document.getElementById("activityCount").textContent = (state.feed || []).length;
+  document.getElementById("weeklyLeader").textContent = weekly[weeklyLeader.name].miles > 0 ? weeklyLeader.name : "—";
 }
 
 function renderPodium() {
@@ -214,7 +293,7 @@ function renderPodium() {
   document.getElementById("podium").innerHTML = sorted.map((p, index) => {
     const m = state.members[p.name];
     return `
-      <article class="card-hover rounded-3xl bg-white p-5 shadow border-t-4" style="border-color:${p.hex}">
+      <article class="card-hover rounded-3xl bg-white p-5 shadow border-t-4 cursor-pointer" style="border-color:${p.hex}" onclick="openProfile('${p.name}')">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
             <div class="h-12 w-12 rounded-2xl grid place-items-center text-white text-xl font-black" style="background:${p.hex}">
@@ -261,13 +340,40 @@ function renderJourney() {
   document.getElementById("journeyBar").style.width = `${pct}%`;
 }
 
+function renderWeeklyStats() {
+  const weekly = weeklyTotalsByPerson();
+  const sorted = [...PARTICIPANTS].sort((a,b) => weekly[b.name].miles - weekly[a.name].miles);
+  const leader = sorted[0];
+  const groupMiles = Object.values(weekly).reduce((sum, v) => sum + v.miles, 0);
+  const activities = Object.values(weekly).reduce((sum, v) => sum + v.activities, 0);
+
+  document.getElementById("weeklyStats").innerHTML = `
+    <div class="rounded-2xl bg-slate-50 p-4">
+      <p class="text-xs uppercase tracking-widest text-slate-400">Weekly Leader</p>
+      <p class="mt-1 text-2xl font-black">${weekly[leader.name].miles > 0 ? leader.name : "No leader yet"}</p>
+      <p class="text-sm text-slate-500">${formatNumber(weekly[leader.name].miles, 1)} miles equivalent this week</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="rounded-2xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-widest text-slate-400">Group Miles</p>
+        <p class="mt-1 text-xl font-black">${formatNumber(groupMiles, 1)}</p>
+      </div>
+      <div class="rounded-2xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-widest text-slate-400">Activities</p>
+        <p class="mt-1 text-xl font-black">${activities}</p>
+      </div>
+    </div>
+  `;
+}
+
 function renderAthletes() {
   document.getElementById("athleteGrid").innerHTML = PARTICIPANTS.map(p => {
     const m = state.members[p.name];
     const total = completionPercent(m);
+    const weekly = weeklyTotalsByPerson()[p.name];
 
     return `
-      <article class="card-hover rounded-3xl bg-slate-50 p-5 border border-slate-200">
+      <article class="card-hover rounded-3xl bg-slate-50 p-5 border border-slate-200 cursor-pointer" onclick="openProfile('${p.name}')">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
             <div class="h-12 w-12 rounded-2xl grid place-items-center text-white font-black text-xl" style="background:${p.hex}">
@@ -275,7 +381,7 @@ function renderAthletes() {
             </div>
             <div>
               <h3 class="text-lg font-black">${p.name}</h3>
-              <p class="text-sm text-slate-500">${formatNumber(total, 1)}% complete</p>
+              <p class="text-sm text-slate-500">${formatNumber(total, 1)}% complete • ${formatNumber(weekly.miles, 1)} mi this week</p>
             </div>
           </div>
 
@@ -294,6 +400,7 @@ function renderAthletes() {
 
 function progressRow(type, label, value, goal, accent) {
   const pct = Math.min((value / goal) * 100, 100);
+  const remaining = Math.max(goal - value, 0);
 
   return `
     <div class="mt-4">
@@ -304,6 +411,7 @@ function progressRow(type, label, value, goal, accent) {
       <div class="progress-track">
         <div class="progress-fill" style="width:${pct}%; background:${accent}"></div>
       </div>
+      <p class="mt-1 text-xs text-slate-400">${formatDistance(type, remaining)} remaining</p>
     </div>
   `;
 }
@@ -323,7 +431,7 @@ function renderMilestones() {
     });
   });
 
-  const latest = hits.slice(-8).reverse();
+  const latest = hits.slice(-10).reverse();
 
   document.getElementById("milestones").innerHTML = latest.length
     ? latest.map(hit => `
@@ -356,13 +464,113 @@ function renderFeed() {
             ${p.name[0]}
           </div>
           <div class="flex-1">
-            <p class="font-bold">${iconFor(item.type)} ${item.member} logged ${formatDistance(item.type, item.distance)} ${item.type}</p>
+            <p class="font-bold">${iconFor(item.type)} ${item.member} ${actionWord(item.type)} ${formatDistance(item.type, item.distance)}</p>
             <p class="text-xs text-slate-500">${timeLabel(item.createdAt)}</p>
           </div>
         </div>
       `;
     }).join("")
     : `<p class="text-sm text-slate-500">No activities yet. Log the first one!</p>`;
+}
+
+/* =========================
+   Profile Modal
+========================= */
+
+function openProfile(name) {
+  activeProfile = name;
+  renderProfile(name);
+  document.getElementById("profileModal").classList.remove("hidden");
+  document.body.classList.add("no-scroll");
+}
+
+function closeProfile() {
+  activeProfile = null;
+  document.getElementById("profileModal").classList.add("hidden");
+  document.body.classList.remove("no-scroll");
+}
+
+function renderProfile(name) {
+  const p = participant(name);
+  const m = state.members[name];
+  const pct = completionPercent(m);
+  const recent = (state.feed || [])
+    .filter(item => typeof item !== "string" && item.member === name)
+    .slice(-8)
+    .reverse();
+  const milestones = completedMilestonesForMember(m);
+  const next = nextMilestonesForMember(m);
+
+  document.getElementById("profileContent").innerHTML = `
+    <div class="flex items-start justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="h-14 w-14 rounded-2xl grid place-items-center text-white text-2xl font-black" style="background:${p.hex}">
+          ${p.name[0]}
+        </div>
+        <div>
+          <h2 class="text-3xl font-black">${p.name}</h2>
+          <p class="text-slate-500">${formatNumber(pct, 1)}% complete</p>
+        </div>
+      </div>
+
+      <button onclick="closeProfile()" class="rounded-full bg-slate-100 px-4 py-2 font-black text-slate-600">×</button>
+    </div>
+
+    <div class="mt-6 grid grid-cols-3 gap-3">
+      <div class="rounded-2xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-widest text-slate-400">Swim</p>
+        <p class="mt-1 font-black">${formatDistance("swim", m.swim)}</p>
+      </div>
+      <div class="rounded-2xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-widest text-slate-400">Bike</p>
+        <p class="mt-1 font-black">${formatDistance("bike", m.bike)}</p>
+      </div>
+      <div class="rounded-2xl bg-slate-50 p-4">
+        <p class="text-xs uppercase tracking-widest text-slate-400">Run</p>
+        <p class="mt-1 font-black">${formatDistance("run", m.run)}</p>
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-3xl bg-slate-50 p-4">
+      <h3 class="font-black">Progress</h3>
+      ${progressRow("swim", "Swim", m.swim, GOALS.swim, p.hex)}
+      ${progressRow("bike", "Bike", m.bike, GOALS.bike, p.hex)}
+      ${progressRow("run", "Run", m.run, GOALS.run, p.hex)}
+    </div>
+
+    <div class="mt-6 rounded-3xl bg-slate-50 p-4">
+      <h3 class="font-black">Next Milestones</h3>
+      <div class="mt-3 space-y-2">
+        ${next.length ? next.map(item => `
+          <div class="rounded-2xl bg-white p-3">
+            <p class="font-bold">${iconFor(item.type)} ${item.label}</p>
+            <p class="text-sm text-slate-500">${formatDistance(item.type, item.remaining)} remaining</p>
+          </div>
+        `).join("") : `<p class="text-sm text-slate-500">All listed milestones complete.</p>`}
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-3xl bg-slate-50 p-4">
+      <h3 class="font-black">Completed Milestones</h3>
+      <div class="mt-3 flex flex-wrap gap-2">
+        ${milestones.length ? milestones.map(item => `
+          <span class="rounded-full bg-white px-3 py-2 text-sm font-bold">${iconFor(item.type)} ${item.label}</span>
+        `).join("") : `<p class="text-sm text-slate-500">No milestones yet.</p>`}
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-3xl bg-slate-50 p-4">
+      <h3 class="font-black">Recent Workouts</h3>
+      <div class="mt-3 space-y-2">
+        ${recent.length ? recent.map(item => `
+          <div class="rounded-2xl bg-white p-3">
+            <p class="font-bold">${iconFor(item.type)} ${actionWord(item.type)} ${formatDistance(item.type, item.distance)}</p>
+            <p class="text-xs text-slate-500">${timeLabel(item.createdAt)}</p>
+          </div>
+        `).join("") : `<p class="text-sm text-slate-500">No workouts logged yet.</p>`}
+      </div>
+    </div>
+  `;
 }
 
 /* =========================
@@ -389,6 +597,7 @@ function setupForm() {
   });
 
   document.getElementById("addBtn").addEventListener("click", addActivity);
+  document.getElementById("modalBackdrop").addEventListener("click", closeProfile);
 }
 
 async function addActivity() {
@@ -422,7 +631,7 @@ async function addActivity() {
     distanceInput.value = "";
     message.textContent = `${member}'s ${selectedType} was added.`;
     message.className = "mt-3 text-sm font-semibold text-emerald-600";
-    showToast(`${iconFor(selectedType)} ${member} logged ${formatDistance(selectedType, distance)} ${selectedType}`);
+    showToast(`${iconFor(selectedType)} ${member} ${actionWord(selectedType)} ${formatDistance(selectedType, distance)}`);
   } catch (error) {
     console.error(error);
     message.textContent = "Something went wrong saving this activity.";

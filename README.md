@@ -1,11 +1,10 @@
-# LazyMan Ironman V6
+# LazyMan Ironman V7
 
-A real-time friend-group LazyMan Ironman tracker.
+V7 adds:
+- Clickable athlete profile panel
+- Weekly snapshot and weekly leader
+- Better feed wording
+- Next milestones per athlete
+- Existing Firebase sync preserved
 
-## Files
-- `index.html` — page structure
-- `style.css` — custom polish
-- `app.js` — Firebase sync and app logic
-
-## GitHub Pages
-Upload all three files to the root of your `lazyman-ironman` repository.
+Upload `index.html`, `style.css`, and `app.js` to the root of your GitHub repository.
