@@ -7,37 +7,78 @@
   <title>LazyMan Ironman</title>
 </head>
 
-<body class="bg-gray-100 text-gray-900">
+<body class="bg-slate-50 text-slate-900">
 
-<div class="max-w-6xl mx-auto p-4">
+<div class="max-w-6xl mx-auto p-4 space-y-6">
 
-  <!-- HEADER -->
-  <div class="flex justify-between items-center mb-6">
-    <div>
-      <h1 class="text-3xl font-bold">🏆 LazyMan Ironman</h1>
-      <p class="text-gray-500">Group Challenge Dashboard</p>
-    </div>
-    <div class="text-right">
-      <p class="text-sm text-gray-500">Group Progress</p>
-      <p id="groupMiles" class="font-bold text-lg">0 miles</p>
+  <!-- HERO -->
+  <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-2xl shadow">
+    <div class="flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold">🏆 LazyMan Ironman</h1>
+        <p class="opacity-90">Group endurance challenge</p>
+
+        <div class="mt-4">
+          <p class="text-sm opacity-80">Current Leader</p>
+          <p id="leaderName" class="text-xl font-bold">—</p>
+          <p id="leaderPct" class="text-sm opacity-90">—</p>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <p class="text-sm opacity-80">Group Miles</p>
+        <p id="groupMiles" class="text-2xl font-bold">0</p>
+      </div>
     </div>
   </div>
 
-  <!-- GROUP GOAL -->
-  <div class="bg-white p-4 rounded-xl shadow mb-6">
-    <h2 class="font-bold mb-2">🌍 Group Journey</h2>
-    <div class="w-full bg-gray-200 rounded-full h-4">
-      <div id="worldBar" class="bg-indigo-500 h-4 rounded-full" style="width:0%"></div>
+  <!-- GROUP JOURNEY -->
+  <div class="bg-white p-4 rounded-2xl shadow">
+    <h2 class="font-semibold mb-2">🌍 Group Journey</h2>
+    <div class="w-full bg-slate-200 rounded-full h-3">
+      <div id="worldBar" class="bg-indigo-500 h-3 rounded-full" style="width:0%"></div>
     </div>
-    <p class="text-sm mt-2 text-gray-500">San Diego → "Ironman World Tour"</p>
+    <p class="text-xs text-slate-500 mt-2">San Diego → real-world distance progression</p>
   </div>
 
   <!-- LEADERBOARD -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6" id="leaderboard"></div>
+  <div class="grid md:grid-cols-3 gap-4" id="leaderboard"></div>
+
+  <!-- OVERALL DISCIPLINES -->
+  <div class="grid md:grid-cols-3 gap-4">
+
+    <div class="bg-white p-4 rounded-2xl shadow">
+      <h3 class="font-bold text-sky-600">🏊 Swim</h3>
+      <p class="text-sm text-slate-500">2.4 mile goal</p>
+      <div class="w-full bg-slate-200 h-2 rounded mt-2">
+        <div id="swimBar" class="bg-sky-500 h-2 rounded"></div>
+      </div>
+      <p id="swimText" class="text-sm mt-2"></p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow">
+      <h3 class="font-bold text-emerald-600">🚴 Bike</h3>
+      <p class="text-sm text-slate-500">112 mile goal</p>
+      <div class="w-full bg-slate-200 h-2 rounded mt-2">
+        <div id="bikeBar" class="bg-emerald-500 h-2 rounded"></div>
+      </div>
+      <p id="bikeText" class="text-sm mt-2"></p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl shadow">
+      <h3 class="font-bold text-orange-600">🏃 Run</h3>
+      <p class="text-sm text-slate-500">26.2 mile goal</p>
+      <div class="w-full bg-slate-200 h-2 rounded mt-2">
+        <div id="runBar" class="bg-orange-500 h-2 rounded"></div>
+      </div>
+      <p id="runText" class="text-sm mt-2"></p>
+    </div>
+
+  </div>
 
   <!-- LOG ACTIVITY -->
-  <div class="bg-white p-4 rounded-xl shadow mb-6">
-    <h2 class="font-bold mb-4">➕ Log Activity</h2>
+  <div class="bg-white p-4 rounded-2xl shadow">
+    <h2 class="font-bold mb-3">➕ Log Activity</h2>
 
     <div class="grid md:grid-cols-4 gap-2">
       <select id="member" class="p-2 border rounded">
@@ -60,10 +101,16 @@
     </div>
   </div>
 
-  <!-- ACTIVITY FEED -->
-  <div class="bg-white p-4 rounded-xl shadow">
-    <h2 class="font-bold mb-4">📍 Recent Activity</h2>
-    <div id="feed" class="space-y-2"></div>
+  <!-- MILESTONES -->
+  <div class="bg-white p-4 rounded-2xl shadow">
+    <h2 class="font-bold mb-2">🎯 Milestones</h2>
+    <div id="milestones" class="text-sm space-y-1 text-slate-600"></div>
+  </div>
+
+  <!-- FEED -->
+  <div class="bg-white p-4 rounded-2xl shadow">
+    <h2 class="font-bold mb-2">📍 Activity Feed</h2>
+    <div id="feed" class="text-sm space-y-2"></div>
   </div>
 
 </div>
@@ -75,6 +122,17 @@ const GOALS = {
   run: 26.2
 };
 
+const MILESTONES = [
+  { type: "run", dist: 3.1, label: "Completed a 5K run" },
+  { type: "run", dist: 6.2, label: "Completed a 10K run" },
+  { type: "run", dist: 13.1, label: "Completed a Half Marathon" },
+  { type: "bike", dist: 10, label: "Biked 10 miles" },
+  { type: "bike", dist: 50, label: "Biked 50 miles" },
+  { type: "bike", dist: 100, label: "Biked 100 miles" },
+  { type: "swim", dist: 1, label: "Swam 1 mile total" },
+  { type: "swim", dist: 2.4, label: "Completed Ironman swim" }
+];
+
 let data = JSON.parse(localStorage.getItem("ironman")) || {
   Sarah: { swim: 1.2, bike: 34, run: 6 },
   Mike: { swim: 0.8, bike: 52, run: 4 },
@@ -82,82 +140,91 @@ let data = JSON.parse(localStorage.getItem("ironman")) || {
 };
 
 let feed = JSON.parse(localStorage.getItem("feed")) || [];
+let unlocked = JSON.parse(localStorage.getItem("milestones")) || [];
 
 function save() {
   localStorage.setItem("ironman", JSON.stringify(data));
   localStorage.setItem("feed", JSON.stringify(feed));
+  localStorage.setItem("milestones", JSON.stringify(unlocked));
 }
 
-function calcPercent(person) {
-  let s = (data[person].swim / GOALS.swim) * 100;
-  let b = (data[person].bike / GOALS.bike) * 100;
-  let r = (data[person].run / GOALS.run) * 100;
-  return ((s + b + r) / 3).toFixed(1);
+function percent(p){
+  let s = (p.swim/GOALS.swim)*100;
+  let b = (p.bike/GOALS.bike)*100;
+  let r = (p.run/GOALS.run)*100;
+  return (s+b+r)/3;
 }
 
-function render() {
-  renderLeaderboard();
-  renderFeed();
-  renderGroup();
-}
+function render(){
 
-function renderLeaderboard() {
-  const el = document.getElementById("leaderboard");
-  el.innerHTML = "";
+  // leaderboard
+  let sorted = Object.keys(data).sort((a,b)=>percent(data[b])-percent(data[a]));
 
-  let sorted = Object.keys(data).sort((a,b)=>{
-    return calcPercent(b) - calcPercent(a);
-  });
-
-  sorted.forEach(name=>{
-    let pct = calcPercent(name);
-
-    el.innerHTML += `
-      <div class="bg-white p-4 rounded-xl shadow">
-        <h3 class="font-bold text-lg">${name}</h3>
+  document.getElementById("leaderboard").innerHTML = sorted.map(n=>{
+    let pct = percent(data[n]).toFixed(1);
+    return `
+      <div class="bg-white p-4 rounded-2xl shadow">
+        <p class="font-bold">${n}</p>
         <p class="text-indigo-600 font-bold">${pct}%</p>
-
-        <div class="text-sm mt-2">
-          🏊 ${data[name].swim.toFixed(1)} / ${GOALS.swim}<br/>
-          🚴 ${data[name].bike.toFixed(1)} / ${GOALS.bike}<br/>
-          🏃 ${data[name].run.toFixed(1)} / ${GOALS.run}
-        </div>
       </div>
     `;
-  });
-}
-
-function renderFeed() {
-  const el = document.getElementById("feed");
-  el.innerHTML = feed.slice().reverse().map(f=>{
-    return `<div class="text-sm border-b pb-1">${f}</div>`;
   }).join("");
+
+  document.getElementById("leaderName").innerText = sorted[0];
+  document.getElementById("leaderPct").innerText = percent(data[sorted[0]]).toFixed(1) + "% complete";
+
+  // group miles
+  let total = Object.values(data).reduce((a,p)=>a+p.swim+p.bike+p.run,0);
+  document.getElementById("groupMiles").innerText = total.toFixed(1);
+
+  document.getElementById("worldBar").style.width = Math.min(total/500*100,100)+"%";
+
+  // discipline bars
+  let swim = data.You.swim/GOALS.swim*100;
+  let bike = data.You.bike/GOALS.bike*100;
+  let run = data.You.run/GOALS.run*100;
+
+  document.getElementById("swimBar").style.width = swim+"%";
+  document.getElementById("bikeBar").style.width = bike+"%";
+  document.getElementById("runBar").style.width = run+"%";
+
+  document.getElementById("swimText").innerText = `${data.You.swim.toFixed(1)} / 2.4 mi`;
+  document.getElementById("bikeText").innerText = `${data.You.bike.toFixed(1)} / 112 mi`;
+  document.getElementById("runText").innerText = `${data.You.run.toFixed(1)} / 26.2 mi`;
+
+  // feed
+  document.getElementById("feed").innerHTML =
+    feed.slice().reverse().map(f=>`<div>• ${f}</div>`).join("");
+
+  // milestones (simple unlock check)
+  let me = data.You;
+  let msgs = [];
+
+  MILESTONES.forEach(m=>{
+    let val = me[m.type];
+    let id = m.type + m.dist;
+
+    if(val >= m.dist && !unlocked.includes(id)){
+      unlocked.push(id);
+      msgs.push("🎉 " + m.label);
+    }
+  });
+
+  save();
+
+  document.getElementById("milestones").innerHTML =
+    unlocked.map(u=>`<div>✔ ${u}</div>`).join("");
 }
 
-function renderGroup() {
-  let total =
-    Object.values(data).reduce((sum,p)=>
-      sum + p.swim + p.bike + p.run
-    ,0);
+function addActivity(){
+  let m = document.getElementById("member").value;
+  let t = document.getElementById("type").value;
+  let d = parseFloat(document.getElementById("distance").value);
 
-  document.getElementById("groupMiles").innerText =
-    total.toFixed(1) + " miles";
+  if(!d) return;
 
-  let worldPct = Math.min(total / 500 * 100, 100);
-  document.getElementById("worldBar").style.width = worldPct + "%";
-}
-
-function addActivity() {
-  const name = document.getElementById("member").value;
-  const type = document.getElementById("type").value;
-  const dist = parseFloat(document.getElementById("distance").value);
-
-  if (!dist) return;
-
-  data[name][type] += dist;
-
-  feed.push(`${name} +${dist} ${type}`);
-  if (feed.length > 20) feed.shift();
+  data[m][t] += d;
+  feed.push(`${m} +${d} ${t}`);
 
   save();
   render();
