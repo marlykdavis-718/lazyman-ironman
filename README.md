@@ -1,14 +1,11 @@
-# LazyMan Ironman V7 Feed Truth Fix
+# LazyMan Ironman V7 Cache Fix
 
-This version uses the activity feed as the source of truth for athlete cards.
-
-Why:
-- Your feed was saving correctly.
-- Athlete cards were not updating from the separate member totals.
-- This fixes the mismatch by calculating athlete totals directly from saved workouts.
+This version forces GitHub Pages/browser to load the newest app.js and style.css by adding cache-busting version strings.
 
 Upload and replace:
 - index.html
 - style.css
 - app.js
 - README.md
+
+Then hard refresh.

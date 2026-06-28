@@ -707,3 +707,6 @@ function showToast(text) {
 }
 
 setupForm();
+
+console.log("LazyMan Ironman loaded: V7 cachefix feed-truth");
+window.LAZYMAN_VERSION = "V7 cachefix feed-truth";
