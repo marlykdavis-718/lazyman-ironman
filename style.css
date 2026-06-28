@@ -1,0 +1,43 @@
+.hero-pattern {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,.7) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 60% 80%, rgba(255,255,255,.45) 0 2px, transparent 3px);
+  background-size: 80px 80px;
+}
+
+.activity-btn {
+  border-radius: 0.875rem;
+  padding: 0.75rem;
+  font-weight: 800;
+  color: rgb(71 85 105);
+  transition: all .18s ease;
+}
+
+.activity-btn.selected {
+  background: white;
+  color: rgb(79 70 229);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .08);
+}
+
+.progress-track {
+  height: .5rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgb(226 232 240);
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .7s ease;
+}
+
+.card-hover {
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 35px rgba(15, 23, 42, .10);
+}

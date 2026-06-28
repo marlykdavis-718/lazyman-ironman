@@ -1,0 +1,81 @@
+.hero-card {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed 55%, #db2777);
+  color: white;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px rgba(79, 70, 229, 0.25);
+}
+
+.hero-stat {
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 1rem;
+  padding: .85rem;
+  backdrop-filter: blur(12px);
+}
+
+.hero-label {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  opacity: .75;
+}
+
+.hero-number {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-top: .2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 1.25rem;
+  padding: 1rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.section-heading h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.section-heading p {
+  color: rgb(100 116 139);
+  font-size: .875rem;
+  margin-top: .1rem;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid rgb(203 213 225);
+  border-radius: .9rem;
+  padding: .75rem .9rem;
+  background: white;
+}
+
+.btn-primary {
+  border-radius: .9rem;
+  padding: .75rem 1rem;
+  background: #4f46e5;
+  color: white;
+  font-weight: 800;
+  transition: transform .15s ease, background .15s ease;
+}
+
+.btn-primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+.progress-bg {
+  height: .55rem;
+  border-radius: 999px;
+  background: rgb(226 232 240);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: .55rem;
+  border-radius: 999px;
+  transition: width .7s ease;
+}
