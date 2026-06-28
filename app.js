@@ -1,4 +1,3 @@
-
 /* =========================
    Firebase
 ========================= */
@@ -82,6 +81,14 @@ let activeProfile = null;
    Helpers
 ========================= */
 
+function blankMembers() {
+  const members = {};
+  PARTICIPANTS.forEach(p => {
+    members[p.name] = { swim: 0, bike: 0, run: 0 };
+  });
+  return members;
+}
+
 function participant(name) {
   return PARTICIPANTS.find(p => p.name === name) || PARTICIPANTS[0];
 }
@@ -102,10 +109,60 @@ function ensureAllUsers() {
   PARTICIPANTS.forEach(p => ensureUser(p.name));
 }
 
+function normalizeFeedItem(item) {
+  if (!item) return null;
+
+  if (typeof item === "object") {
+    const member = item.member;
+    const type = item.type;
+    const distance = Number(item.distance);
+
+    if (PARTICIPANTS.some(p => p.name === member) && ["swim", "bike", "run"].includes(type) && distance > 0) {
+      return {
+        member,
+        type,
+        distance,
+        createdAt: item.createdAt || null
+      };
+    }
+
+    return null;
+  }
+
+  // Supports older text logs like:
+  // "Katie +15 bike"
+  // "6/28/2026 — Katie logged 15 mi bike"
+  if (typeof item === "string") {
+    const member = PARTICIPANTS.find(p => item.includes(p.name))?.name;
+    const type = ["swim", "bike", "run"].find(t => item.toLowerCase().includes(t));
+    const match = item.match(/(\d+(\.\d+)?)/);
+    const distance = match ? Number(match[1]) : 0;
+
+    if (member && type && distance > 0) {
+      return { member, type, distance, createdAt: null, originalText: item };
+    }
+  }
+
+  return null;
+}
+
+function deriveMembersFromFeed(feed) {
+  const members = blankMembers();
+
+  (feed || []).forEach(item => {
+    const entry = normalizeFeedItem(item);
+    if (!entry) return;
+
+    members[entry.member][entry.type] += entry.distance;
+  });
+
+  return members;
+}
+
 function completionPercent(member) {
-  const swim = Math.min(member.swim / GOALS.swim, 1);
-  const bike = Math.min(member.bike / GOALS.bike, 1);
-  const run = Math.min(member.run / GOALS.run, 1);
+  const swim = Math.min((member.swim || 0) / GOALS.swim, 1);
+  const bike = Math.min((member.bike || 0) / GOALS.bike, 1);
+  const run = Math.min((member.run || 0) / GOALS.run, 1);
   return ((swim + bike + run) / 3) * 100;
 }
 
@@ -128,9 +185,10 @@ function totalMilesEquivalent() {
 }
 
 function activityMilesEquivalent(entry) {
-  if (!entry || typeof entry === "string") return 0;
-  if (entry.type === "swim") return (entry.distance || 0) / M_PER_MILE;
-  return entry.distance || 0;
+  const normalized = normalizeFeedItem(entry);
+  if (!normalized) return 0;
+  if (normalized.type === "swim") return (normalized.distance || 0) / M_PER_MILE;
+  return normalized.distance || 0;
 }
 
 function sortedParticipants() {
@@ -140,9 +198,10 @@ function sortedParticipants() {
 }
 
 function entryDate(entry) {
-  if (!entry || typeof entry === "string" || !entry.createdAt) return null;
-  if (entry.createdAt.toDate) return entry.createdAt.toDate();
-  return new Date(entry.createdAt);
+  const normalized = normalizeFeedItem(entry);
+  if (!normalized || !normalized.createdAt) return null;
+  if (normalized.createdAt.toDate) return normalized.createdAt.toDate();
+  return new Date(normalized.createdAt);
 }
 
 function isThisWeek(date) {
@@ -160,11 +219,11 @@ function weeklyTotalsByPerson() {
   const totals = {};
   PARTICIPANTS.forEach(p => totals[p.name] = { miles: 0, activities: 0 });
 
-  (state.feed || []).forEach(entry => {
-    if (typeof entry === "string") return;
-    const date = entryDate(entry);
-    if (!isThisWeek(date)) return;
-    if (!totals[entry.member]) totals[entry.member] = { miles: 0, activities: 0 };
+  (state.feed || []).forEach(item => {
+    const entry = normalizeFeedItem(item);
+    if (!entry) return;
+    const date = entryDate(item);
+    if (!isThisWeek(date) && entry.createdAt) return;
     totals[entry.member].miles += activityMilesEquivalent(entry);
     totals[entry.member].activities += 1;
   });
@@ -173,7 +232,7 @@ function weeklyTotalsByPerson() {
 }
 
 function timeLabel(timestamp) {
-  if (!timestamp) return "just now";
+  if (!timestamp) return "recently";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "recently";
   return date.toLocaleString([], {
@@ -227,13 +286,8 @@ async function initializeDocumentIfNeeded() {
   const snap = await GROUP_DOC.get();
 
   if (!snap.exists) {
-    const members = {};
-    PARTICIPANTS.forEach(p => {
-      members[p.name] = { swim: 0, bike: 0, run: 0 };
-    });
-
     await GROUP_DOC.set({
-      members,
+      members: blankMembers(),
       feed: [],
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -244,12 +298,15 @@ GROUP_DOC.onSnapshot(snapshot => {
   if (!snapshot.exists) return;
 
   const cloud = snapshot.data();
-  state.members = cloud.members || {};
   state.feed = Array.isArray(cloud.feed) ? cloud.feed : [];
 
+  // IMPORTANT FIX:
+  // Athlete cards are now calculated from saved activities.
+  // This prevents feed/card mismatch and repairs old broken totals.
+  state.members = deriveMembersFromFeed(state.feed);
   ensureAllUsers();
-  render();
 
+  render();
   if (activeProfile) renderProfile(activeProfile);
 });
 
@@ -453,19 +510,21 @@ function renderFeed() {
 
   document.getElementById("feed").innerHTML = feed.length
     ? feed.map(item => {
-      if (typeof item === "string") {
+      const entry = normalizeFeedItem(item);
+
+      if (!entry) {
         return `<div class="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">${item}</div>`;
       }
 
-      const p = participant(item.member);
+      const p = participant(entry.member);
       return `
         <div class="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
           <div class="h-10 w-10 rounded-xl grid place-items-center text-white font-black" style="background:${p.hex}">
             ${p.name[0]}
           </div>
           <div class="flex-1">
-            <p class="font-bold">${iconFor(item.type)} ${item.member} ${actionWord(item.type)} ${formatDistance(item.type, item.distance)}</p>
-            <p class="text-xs text-slate-500">${timeLabel(item.createdAt)}</p>
+            <p class="font-bold">${iconFor(entry.type)} ${entry.member} ${actionWord(entry.type)} ${formatDistance(entry.type, entry.distance)}</p>
+            <p class="text-xs text-slate-500">${timeLabel(entry.createdAt)}</p>
           </div>
         </div>
       `;
@@ -495,7 +554,8 @@ function renderProfile(name) {
   const m = state.members[name];
   const pct = completionPercent(m);
   const recent = (state.feed || [])
-    .filter(item => typeof item !== "string" && item.member === name)
+    .map(normalizeFeedItem)
+    .filter(item => item && item.member === name)
     .slice(-8)
     .reverse();
   const milestones = completedMilestonesForMember(m);
@@ -620,28 +680,10 @@ async function addActivity() {
   };
 
   try {
-    await db.runTransaction(async transaction => {
-      const snap = await transaction.get(GROUP_DOC);
-      const current = snap.exists ? snap.data() : {};
-      const members = current.members || {};
-      const feed = Array.isArray(current.feed) ? current.feed : [];
-
-      PARTICIPANTS.forEach(p => {
-        if (!members[p.name]) members[p.name] = { swim: 0, bike: 0, run: 0 };
-        ["swim", "bike", "run"].forEach(type => {
-          if (typeof members[p.name][type] !== "number") members[p.name][type] = 0;
-        });
-      });
-
-      members[member][selectedType] += distance;
-      feed.push(entry);
-
-      transaction.set(GROUP_DOC, {
-        members,
-        feed: feed.slice(-250),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    });
+    await GROUP_DOC.set({
+      feed: firebase.firestore.FieldValue.arrayUnion(entry),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 
     distanceInput.value = "";
     message.textContent = `${member}'s ${selectedType} was added.`;

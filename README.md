@@ -1,8 +1,11 @@
-# LazyMan Ironman V7 Save Fix
+# LazyMan Ironman V7 Feed Truth Fix
 
-This fixes activity saving so new workouts update both:
-- the live activity feed
-- the matching athlete card totals
+This version uses the activity feed as the source of truth for athlete cards.
+
+Why:
+- Your feed was saving correctly.
+- Athlete cards were not updating from the separate member totals.
+- This fixes the mismatch by calculating athlete totals directly from saved workouts.
 
 Upload and replace:
 - index.html
