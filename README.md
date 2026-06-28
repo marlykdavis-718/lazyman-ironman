@@ -1,10 +1,9 @@
-# LazyMan Ironman V7
+# LazyMan Ironman V7 Fixed
 
-V7 adds:
-- Clickable athlete profile panel
-- Weekly snapshot and weekly leader
-- Better feed wording
-- Next milestones per athlete
-- Existing Firebase sync preserved
+This is the fixed V7 package. It removes the bad leading character that prevented app.js from running.
 
-Upload `index.html`, `style.css`, and `app.js` to the root of your GitHub repository.
+Upload and replace:
+- index.html
+- style.css
+- app.js
+- README.md
