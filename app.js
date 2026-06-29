@@ -485,7 +485,7 @@ function showLiveBannerForActivity(entry) {
   const title = document.getElementById("liveBannerTitle");
   const text = document.getElementById("liveBannerText");
 
-  avatar.outerHTML = avatarMarkup(p, "h-11 w-11", "text-base").replace("<div", "<div id=\\"liveBannerAvatar\\"");
+  avatar.outerHTML = avatarMarkup(p, "h-11 w-11", "text-base").replace("<div", "<div id=\"liveBannerAvatar\"");
   title.textContent = `${iconFor(entry.type)} ${entry.member} ${actionWord(entry.type)} ${formatDistance(entry.type, entry.distance)}`;
   text.textContent = "Live activity just came in.";
 
@@ -1069,8 +1069,8 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V14 community-celebrations");
-window.LAZYMAN_VERSION = "V14 community-celebrations";
+console.log("LazyMan Ironman loaded: V14 fixed community-celebrations");
+window.LAZYMAN_VERSION = "V14 fixed community-celebrations";
 
 
 /* =========================
