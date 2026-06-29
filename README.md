@@ -1,15 +1,6 @@
-# LazyMan Ironman V11
+# LazyMan Ironman V12
 
-V11 adds polished circular profile photos throughout the app.
-
-Expected photo paths:
-- assets/profile-pictures/marly.png
-- assets/profile-pictures/laura.png
-- assets/profile-pictures/nick.png
-- assets/profile-pictures/katie.png
-- assets/profile-pictures/gunnar.png
-- assets/profile-pictures/taylor.png
-- assets/profile-pictures/dwayne.png
+V12 turns the site into an installable mobile web app (PWA).
 
 Upload/replace:
 - index.html
@@ -17,7 +8,15 @@ Upload/replace:
 - app.js
 - README.md
 
-Also upload the circular PNG profile pictures into:
+Upload/add:
+- manifest.json
+- service-worker.js
+- icons/icon-192.png
+- icons/icon-512.png
+
+Your profile photos stay in:
 assets/profile-pictures/
 
-After upload, hard refresh with Ctrl + Shift + R.
+Install instructions:
+- iPhone: open in Safari → Share → Add to Home Screen
+- Android: open in Chrome → Install app / Add to Home Screen

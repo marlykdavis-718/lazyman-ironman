@@ -797,5 +797,50 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V11 circular-profile-photos");
-window.LAZYMAN_VERSION = "V11 circular-profile-photos";
+console.log("LazyMan Ironman loaded: V12 mobile-app-pwa");
+window.LAZYMAN_VERSION = "V12 mobile-app-pwa";
+
+
+/* =========================
+   PWA Install
+========================= */
+
+let deferredInstallPrompt = null;
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js?v=12").catch(error => {
+      console.warn("Service worker registration failed:", error);
+    });
+  });
+}
+
+window.addEventListener("beforeinstallprompt", event => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+
+  const installCard = document.getElementById("installCard");
+  if (installCard) installCard.classList.remove("hidden");
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  const installCard = document.getElementById("installCard");
+  if (installCard) installCard.classList.add("hidden");
+});
+
+document.addEventListener("click", async event => {
+  if (event.target && event.target.id === "installBtn") {
+    if (!deferredInstallPrompt) {
+      showToast("On iPhone: tap Share, then Add to Home Screen.");
+      return;
+    }
+
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+
+    const installCard = document.getElementById("installCard");
+    if (installCard) installCard.classList.add("hidden");
+  }
+});
