@@ -46,3 +46,19 @@
 .no-scroll {
   overflow: hidden;
 }
+
+
+.activity-btn:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, .35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  #feed button {
+    padding-top: .4rem;
+    padding-bottom: .4rem;
+  }
+}
