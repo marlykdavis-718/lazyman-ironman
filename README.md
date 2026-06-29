@@ -1,8 +1,15 @@
-# LazyMan Ironman V8.1
+# LazyMan Ironman V10
 
-V8.1 keeps all V8 features and moves the instruction cards lower on the page:
-- The unit/edit cards now appear after Athlete Progress
-- They sit directly above Log Activity
+V10 adds profile photos throughout the app.
+
+Expected photo paths:
+- assets/profile-pictures/marly.jpg
+- assets/profile-pictures/laura.jpg
+- assets/profile-pictures/nick.jpg
+- assets/profile-pictures/katie.jpg
+- assets/profile-pictures/gunnar.jpg
+- assets/profile-pictures/taylor.jpg
+- assets/profile-pictures/dwayne.jpg
 
 Upload and replace:
 - index.html
@@ -10,4 +17,4 @@ Upload and replace:
 - app.js
 - README.md
 
-After upload, hard refresh with Ctrl + Shift + R.
+Your uploaded profile pictures stay in the `assets/profile-pictures/` folder.

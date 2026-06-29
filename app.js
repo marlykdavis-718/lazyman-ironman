@@ -20,13 +20,13 @@ const GROUP_DOC = db.collection("ironman").doc("group");
 ========================= */
 
 const PARTICIPANTS = [
-  { name: "Marly", color: "emerald", hex: "#10b981" },
-  { name: "Laura", color: "amber", hex: "#f59e0b" },
-  { name: "Nick", color: "orange", hex: "#f97316" },
-  { name: "Katie", color: "violet", hex: "#8b5cf6" },
-  { name: "Gunnar", color: "red", hex: "#ef4444" },
-  { name: "Taylor", color: "teal", hex: "#14b8a6" },
-  { name: "Dwayne", color: "blue", hex: "#3b82f6" }
+  { name: "Marly", color: "emerald", hex: "#10b981", photo: "assets/profile-pictures/marly.jpg" },
+  { name: "Laura", color: "amber", hex: "#f59e0b", photo: "assets/profile-pictures/laura.jpg" },
+  { name: "Nick", color: "orange", hex: "#f97316", photo: "assets/profile-pictures/nick.jpg" },
+  { name: "Katie", color: "violet", hex: "#8b5cf6", photo: "assets/profile-pictures/katie.jpg" },
+  { name: "Gunnar", color: "red", hex: "#ef4444", photo: "assets/profile-pictures/gunnar.jpg" },
+  { name: "Taylor", color: "teal", hex: "#14b8a6", photo: "assets/profile-pictures/taylor.jpg" },
+  { name: "Dwayne", color: "blue", hex: "#3b82f6", photo: "assets/profile-pictures/dwayne.jpg" }
 ];
 
 const GOALS = {
@@ -91,6 +91,14 @@ function blankMembers() {
 
 function participant(name) {
   return PARTICIPANTS.find(p => p.name === name) || PARTICIPANTS[0];
+}
+
+function avatarMarkup(p, sizeClass = "h-12 w-12", textClass = "text-xl") {
+  return `
+    <div class="${sizeClass} avatar-shell rounded-2xl grid place-items-center text-white ${textClass} font-black ring-2 ring-white/30" style="background:${p.hex}">
+      <img src="${p.photo}" alt="${p.name}" class="avatar-img" onerror="this.remove(); this.parentElement.textContent='${p.name[0]}';" />
+    </div>
+  `;
 }
 
 function ensureUser(name) {
@@ -335,8 +343,7 @@ function renderHero() {
   const weeklySorted = [...PARTICIPANTS].sort((a,b) => weekly[b.name].miles - weekly[a.name].miles);
   const weeklyLeader = weeklySorted[0];
 
-  document.getElementById("leaderAvatar").textContent = leader.name[0];
-  document.getElementById("leaderAvatar").style.background = leader.hex;
+  document.getElementById("leaderAvatar").outerHTML = avatarMarkup(leader, "h-14 w-14", "text-2xl").replace("avatar-shell", "avatar-shell").replace("<div", "<div id=\"leaderAvatar\"");
   document.getElementById("leaderName").textContent = leader.name;
   document.getElementById("leaderPct").textContent = `${formatNumber(completionPercent(leaderMember), 1)}% complete`;
   document.getElementById("groupMiles").textContent = formatNumber(totalMiles, 1);
@@ -353,9 +360,7 @@ function renderPodium() {
       <article class="card-hover rounded-3xl bg-white p-5 shadow border-t-4 cursor-pointer" style="border-color:${p.hex}" onclick="openProfile('${p.name}')">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div class="h-12 w-12 rounded-2xl grid place-items-center text-white text-xl font-black" style="background:${p.hex}">
-              ${p.name[0]}
-            </div>
+            ${avatarMarkup(p, "h-12 w-12", "text-xl")}
             <div>
               <p class="text-xs uppercase tracking-widest text-slate-400">${medals[index]} Place</p>
               <h3 class="text-xl font-black">${p.name}</h3>
@@ -433,9 +438,7 @@ function renderAthletes() {
       <article class="card-hover rounded-3xl bg-slate-50 p-5 border border-slate-200 cursor-pointer" onclick="openProfile('${p.name}')">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
-            <div class="h-12 w-12 rounded-2xl grid place-items-center text-white font-black text-xl" style="background:${p.hex}">
-              ${p.name[0]}
-            </div>
+            ${avatarMarkup(p, "h-12 w-12", "text-xl")}
             <div>
               <h3 class="text-lg font-black">${p.name}</h3>
               <p class="text-sm text-slate-500">${formatNumber(total, 1)}% complete • ${formatNumber(weekly.miles, 1)} mi this week</p>
@@ -493,9 +496,7 @@ function renderMilestones() {
   document.getElementById("milestones").innerHTML = latest.length
     ? latest.map(hit => `
       <div class="flex items-center gap-3 rounded-2xl bg-slate-50 p-3">
-        <div class="h-9 w-9 rounded-xl grid place-items-center text-white font-black" style="background:${hit.person.hex}">
-          ${hit.person.name[0]}
-        </div>
+        ${avatarMarkup(hit.person, "h-9 w-9 rounded-xl", "text-base")}
         <div>
           <p class="font-bold">${hit.person.name} reached ${hit.label}</p>
           <p class="text-xs text-slate-500">${iconFor(hit.type)} ${hit.type}</p>
@@ -531,9 +532,7 @@ function renderFeed() {
 
       return `
         <div class="flex items-start gap-3 rounded-2xl bg-slate-50 p-3">
-          <div class="h-10 w-10 rounded-xl grid place-items-center text-white font-black" style="background:${p.hex}">
-            ${p.name[0]}
-          </div>
+          ${avatarMarkup(p, "h-10 w-10 rounded-xl", "text-base")}
 
           <div class="flex-1">
             <p class="font-bold">${iconFor(entry.type)} ${entry.member} ${actionWord(entry.type)} ${formatDistance(entry.type, entry.distance)}</p>
@@ -582,9 +581,7 @@ function renderProfile(name) {
   document.getElementById("profileContent").innerHTML = `
     <div class="flex items-start justify-between gap-4">
       <div class="flex items-center gap-3">
-        <div class="h-14 w-14 rounded-2xl grid place-items-center text-white text-2xl font-black" style="background:${p.hex}">
-          ${p.name[0]}
-        </div>
+        ${avatarMarkup(p, "h-14 w-14", "text-2xl")}
         <div>
           <h2 class="text-3xl font-black">${p.name}</h2>
           <p class="text-slate-500">${formatNumber(pct, 1)}% complete</p>
@@ -800,5 +797,5 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V8 edit-delete-polish");
-window.LAZYMAN_VERSION = "V8 edit-delete-polish";
+console.log("LazyMan Ironman loaded: V10 profile-photos");
+window.LAZYMAN_VERSION = "V10 profile-photos";
