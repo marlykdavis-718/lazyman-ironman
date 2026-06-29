@@ -168,3 +168,37 @@ input:focus-visible {
     bottom: calc(1.25rem + env(safe-area-inset-bottom));
   }
 }
+
+
+/* V14 community/live celebration layer */
+#liveBanner {
+  animation: slideDown .25s ease both;
+}
+
+@keyframes slideDown {
+  from { transform: translate(-50%, -1rem); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+.celebration-burst {
+  background:
+    radial-gradient(circle at 20% 20%, #fbbf24 0 6px, transparent 7px),
+    radial-gradient(circle at 80% 30%, #38bdf8 0 6px, transparent 7px),
+    radial-gradient(circle at 30% 80%, #f472b6 0 6px, transparent 7px),
+    radial-gradient(circle at 75% 75%, #34d399 0 6px, transparent 7px);
+  animation: floatBurst 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes floatBurst {
+  from { transform: scale(1) rotate(0deg); }
+  to { transform: scale(1.08) rotate(4deg); }
+}
+
+#celebrationModal section {
+  animation: popIn .24s ease both;
+}
+
+@keyframes popIn {
+  from { transform: scale(.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

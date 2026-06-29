@@ -1,10 +1,10 @@
-# LazyMan Ironman V13.1
+# LazyMan Ironman V14
 
-Tweaks:
-- Moves Group Adventure below Log Activity and above Milestone Watch
-- Adds floating plus button in the bottom-right corner
-- Plus button opens a quick-log workout sheet
-- Keeps PWA support and Weekly Recap
+V14 Community adds:
+- Live activity banners
+- New leader banner
+- Milestone celebration overlay
+- Keeps quick-log button, weekly recap, PWA install, profile photos, edit/delete
 
 Upload/replace all files from this package.
-After upload, hard refresh and reopen the mobile app.
+After upload, hard refresh and reopen the installed mobile app.

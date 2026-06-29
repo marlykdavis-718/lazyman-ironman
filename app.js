@@ -77,6 +77,10 @@ let state = {
 let selectedType = "swim";
 let quickSelectedType = "swim";
 let activeProfile = null;
+let lastSeenFeedLength = null;
+let lastLeaderName = null;
+let previousMilestoneKeys = new Set();
+let hasRenderedOnce = false;
 
 /* =========================
    Helpers
@@ -287,6 +291,42 @@ function nextMilestonesForMember(member) {
   return next;
 }
 
+
+function milestoneKey(personName, type, distance) {
+  return `${personName}-${type}-${distance}`;
+}
+
+function milestoneHitsForAll() {
+  const hits = [];
+  PARTICIPANTS.forEach(p => {
+    const m = state.members[p.name];
+    Object.keys(MILESTONES).forEach(type => {
+      MILESTONES[type].forEach(ms => {
+        if ((m[type] || 0) >= ms.distance) {
+          hits.push({
+            key: milestoneKey(p.name, type, ms.distance),
+            person: p,
+            type,
+            label: ms.label,
+            distance: ms.distance
+          });
+        }
+      });
+    });
+  });
+  return hits;
+}
+
+function currentLeaderName() {
+  return sortedParticipants()[0]?.name || null;
+}
+
+function latestNormalizedEntry() {
+  const latest = (state.feed || []).slice().reverse().map(normalizeFeedItem).find(Boolean);
+  return latest || null;
+}
+
+
 /* =========================
    Firebase Sync
 ========================= */
@@ -315,8 +355,13 @@ GROUP_DOC.onSnapshot(snapshot => {
   state.members = deriveMembersFromFeed(state.feed);
   ensureAllUsers();
 
+  const communityEvents = detectCommunityEvents();
+
   render();
   if (activeProfile) renderProfile(activeProfile);
+
+  playCommunityEvents(communityEvents);
+  hasRenderedOnce = true;
 });
 
 initializeDocumentIfNeeded();
@@ -371,6 +416,120 @@ function biggestClimberThisWeek() {
   const sorted = [...PARTICIPANTS].sort((a, b) => weekly[b.name].miles - weekly[a.name].miles);
   const top = sorted[0];
   return weekly[top.name].miles > 0 ? { member: top.name, miles: weekly[top.name].miles } : null;
+}
+
+
+
+function detectCommunityEvents() {
+  const events = {
+    newActivity: null,
+    newLeader: null,
+    milestones: []
+  };
+
+  const feedLength = (state.feed || []).length;
+  const leaderName = currentLeaderName();
+  const milestoneHits = milestoneHitsForAll();
+  const milestoneKeys = new Set(milestoneHits.map(hit => hit.key));
+
+  if (lastSeenFeedLength === null) {
+    lastSeenFeedLength = feedLength;
+    lastLeaderName = leaderName;
+    previousMilestoneKeys = milestoneKeys;
+    return events;
+  }
+
+  if (feedLength > lastSeenFeedLength) {
+    events.newActivity = latestNormalizedEntry();
+  }
+
+  if (leaderName && lastLeaderName && leaderName !== lastLeaderName) {
+    events.newLeader = leaderName;
+  }
+
+  milestoneHits.forEach(hit => {
+    if (!previousMilestoneKeys.has(hit.key)) {
+      events.milestones.push(hit);
+    }
+  });
+
+  lastSeenFeedLength = feedLength;
+  lastLeaderName = leaderName;
+  previousMilestoneKeys = milestoneKeys;
+
+  return events;
+}
+
+function playCommunityEvents(events) {
+  if (!hasRenderedOnce) return;
+
+  if (events.newActivity) {
+    showLiveBannerForActivity(events.newActivity);
+  }
+
+  if (events.newLeader) {
+    showNewLeader(events.newLeader);
+  }
+
+  if (events.milestones && events.milestones.length) {
+    setTimeout(() => showMilestoneCelebration(events.milestones[0]), 800);
+  }
+}
+
+function showLiveBannerForActivity(entry) {
+  const banner = document.getElementById("liveBanner");
+  if (!banner) return;
+
+  const p = participant(entry.member);
+  const avatar = document.getElementById("liveBannerAvatar");
+  const title = document.getElementById("liveBannerTitle");
+  const text = document.getElementById("liveBannerText");
+
+  avatar.outerHTML = avatarMarkup(p, "h-11 w-11", "text-base").replace("<div", "<div id=\\"liveBannerAvatar\\"");
+  title.textContent = `${iconFor(entry.type)} ${entry.member} ${actionWord(entry.type)} ${formatDistance(entry.type, entry.distance)}`;
+  text.textContent = "Live activity just came in.";
+
+  banner.classList.remove("hidden");
+
+  clearTimeout(window.liveBannerTimer);
+  window.liveBannerTimer = setTimeout(() => {
+    banner.classList.add("hidden");
+  }, 4500);
+}
+
+function showNewLeader(name) {
+  const badge = document.getElementById("newLeaderBadge");
+  if (!badge) return;
+
+  badge.textContent = `🔥 New Leader: ${name}`;
+  badge.classList.remove("hidden");
+
+  clearTimeout(window.newLeaderTimer);
+  window.newLeaderTimer = setTimeout(() => {
+    badge.classList.add("hidden");
+  }, 5000);
+
+  showToast(`🔥 ${name} moved into 1st place.`);
+}
+
+function showMilestoneCelebration(hit) {
+  const modal = document.getElementById("celebrationModal");
+  if (!modal) return;
+
+  document.getElementById("celebrationEmoji").textContent = iconFor(hit.type);
+  document.getElementById("celebrationTitle").textContent = `${hit.person.name} reached ${hit.label}`;
+  document.getElementById("celebrationText").textContent = `${formatDistance(hit.type, hit.distance)} ${hit.type} milestone unlocked.`;
+
+  modal.classList.remove("hidden");
+  document.body.classList.add("no-scroll");
+}
+
+function closeCelebration() {
+  const modal = document.getElementById("celebrationModal");
+  if (!modal) return;
+
+  modal.classList.add("hidden");
+  document.body.classList.remove("no-scroll");
 }
 
 
@@ -793,6 +952,14 @@ function setupForm() {
 
   document.getElementById("addBtn").addEventListener("click", addActivity);
   document.getElementById("modalBackdrop").addEventListener("click", closeProfile);
+  const celebrationClose = document.getElementById("celebrationClose");
+  const celebrationModal = document.getElementById("celebrationModal");
+  if (celebrationClose) celebrationClose.addEventListener("click", closeCelebration);
+  if (celebrationModal) {
+    celebrationModal.addEventListener("click", event => {
+      if (event.target.id === "celebrationModal") closeCelebration();
+    });
+  }
   const quickMemberSelect = document.getElementById("quickMember");
   if (quickMemberSelect) {
     quickMemberSelect.innerHTML = PARTICIPANTS.map(p => `<option value="${p.name}">${p.name}</option>`).join("");
@@ -902,8 +1069,8 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V13.1 quick-log-layout");
-window.LAZYMAN_VERSION = "V13.1 quick-log-layout";
+console.log("LazyMan Ironman loaded: V14 community-celebrations");
+window.LAZYMAN_VERSION = "V14 community-celebrations";
 
 
 /* =========================
