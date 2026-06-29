@@ -131,3 +131,40 @@ input:focus-visible {
     margin-top: -0.25rem;
   }
 }
+
+
+/* V13 weekly recap polish */
+#weeklyRecap article {
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+#weeklyRecap article:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, .08);
+}
+
+
+/* V13.1 quick log button */
+.quick-activity-btn {
+  border-radius: 0.875rem;
+  padding: 0.75rem;
+  font-weight: 800;
+  color: rgb(71 85 105);
+  transition: all .18s ease;
+}
+
+.quick-activity-btn.selected {
+  background: white;
+  color: rgb(79 70 229);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .08);
+}
+
+#quickLogFab {
+  padding-bottom: .35rem;
+}
+
+@media (display-mode: standalone) {
+  #quickLogFab {
+    bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  }
+}

@@ -1,22 +1,10 @@
-# LazyMan Ironman V12
+# LazyMan Ironman V13.1
 
-V12 turns the site into an installable mobile web app (PWA).
+Tweaks:
+- Moves Group Adventure below Log Activity and above Milestone Watch
+- Adds floating plus button in the bottom-right corner
+- Plus button opens a quick-log workout sheet
+- Keeps PWA support and Weekly Recap
 
-Upload/replace:
-- index.html
-- style.css
-- app.js
-- README.md
-
-Upload/add:
-- manifest.json
-- service-worker.js
-- icons/icon-192.png
-- icons/icon-512.png
-
-Your profile photos stay in:
-assets/profile-pictures/
-
-Install instructions:
-- iPhone: open in Safari → Share → Add to Home Screen
-- Android: open in Chrome → Install app / Add to Home Screen
+Upload/replace all files from this package.
+After upload, hard refresh and reopen the mobile app.

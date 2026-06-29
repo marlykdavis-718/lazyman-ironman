@@ -75,6 +75,7 @@ let state = {
 };
 
 let selectedType = "swim";
+let quickSelectedType = "swim";
 let activeProfile = null;
 
 /* =========================
@@ -320,6 +321,59 @@ GROUP_DOC.onSnapshot(snapshot => {
 
 initializeDocumentIfNeeded();
 
+
+function thisWeekEntries() {
+  return (state.feed || [])
+    .map(normalizeFeedItem)
+    .filter(entry => {
+      if (!entry) return false;
+      const date = entry.createdAt ? new Date(entry.createdAt) : null;
+      return isThisWeek(date);
+    });
+}
+
+function weekDateRangeLabel() {
+  const now = new Date();
+  const start = new Date(now);
+  const day = start.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  start.setDate(start.getDate() + diff);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return `${start.toLocaleDateString([], { month: "short", day: "numeric" })} – ${end.toLocaleDateString([], { month: "short", day: "numeric" })}`;
+}
+
+function longestWorkoutThisWeek(type) {
+  const entries = thisWeekEntries().filter(entry => entry.type === type);
+  if (!entries.length) return null;
+  return entries.sort((a, b) => b.distance - a.distance)[0];
+}
+
+function mostWorkoutsThisWeek() {
+  const counts = {};
+  PARTICIPANTS.forEach(p => counts[p.name] = 0);
+
+  thisWeekEntries().forEach(entry => {
+    counts[entry.member] = (counts[entry.member] || 0) + 1;
+  });
+
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return sorted[0][1] > 0 ? { member: sorted[0][0], count: sorted[0][1] } : null;
+}
+
+function biggestClimberThisWeek() {
+  // Approximation: ranks by weekly miles equivalent.
+  // True position change needs historical rank snapshots, which we can add later.
+  const weekly = weeklyTotalsByPerson();
+  const sorted = [...PARTICIPANTS].sort((a, b) => weekly[b.name].miles - weekly[a.name].miles);
+  const top = sorted[0];
+  return weekly[top.name].miles > 0 ? { member: top.name, miles: weekly[top.name].miles } : null;
+}
+
+
 /* =========================
    Rendering
 ========================= */
@@ -329,6 +383,7 @@ function render() {
   renderPodium();
   renderJourney();
   renderWeeklyStats();
+  renderWeeklyRecap();
   renderAthletes();
   renderMilestones();
   renderFeed();
@@ -427,6 +482,71 @@ function renderWeeklyStats() {
     </div>
   `;
 }
+
+function renderWeeklyRecap() {
+  const container = document.getElementById("weeklyRecap");
+  if (!container) return;
+
+  const dateLabel = document.getElementById("weeklyRecapDates");
+  if (dateLabel) dateLabel.textContent = `Highlights for ${weekDateRangeLabel()}`;
+
+  const weekly = weeklyTotalsByPerson();
+  const weeklySorted = [...PARTICIPANTS].sort((a, b) => weekly[b.name].miles - weekly[a.name].miles);
+  const mostMiles = weeklySorted[0];
+  const longestRide = longestWorkoutThisWeek("bike");
+  const longestRun = longestWorkoutThisWeek("run");
+  const longestSwim = longestWorkoutThisWeek("swim");
+  const mostWorkouts = mostWorkoutsThisWeek();
+
+  const cards = [
+    {
+      icon: "🥇",
+      title: "Most Miles",
+      person: weekly[mostMiles.name].miles > 0 ? mostMiles.name : "—",
+      value: weekly[mostMiles.name].miles > 0 ? `${formatNumber(weekly[mostMiles.name].miles, 1)} mi eq.` : "No workouts yet"
+    },
+    {
+      icon: "🚴",
+      title: "Longest Ride",
+      person: longestRide ? longestRide.member : "—",
+      value: longestRide ? formatDistance("bike", longestRide.distance) : "No rides yet"
+    },
+    {
+      icon: "🏃",
+      title: "Longest Run",
+      person: longestRun ? longestRun.member : "—",
+      value: longestRun ? formatDistance("run", longestRun.distance) : "No runs yet"
+    },
+    {
+      icon: "🏊",
+      title: "Longest Swim",
+      person: longestSwim ? longestSwim.member : "—",
+      value: longestSwim ? formatDistance("swim", longestSwim.distance) : "No swims yet"
+    },
+    {
+      icon: "🔥",
+      title: "Most Workouts",
+      person: mostWorkouts ? mostWorkouts.member : "—",
+      value: mostWorkouts ? `${mostWorkouts.count} activities` : "No workouts yet"
+    }
+  ];
+
+  container.innerHTML = cards.map(card => {
+    const p = card.person !== "—" ? participant(card.person) : null;
+    return `
+      <article class="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+        <div class="flex items-center justify-between gap-3">
+          <div class="text-2xl">${card.icon}</div>
+          ${p ? avatarMarkup(p, "h-10 w-10", "text-base") : `<div class="h-10 w-10 rounded-full bg-slate-200"></div>`}
+        </div>
+        <p class="mt-3 text-xs uppercase tracking-widest text-slate-400">${card.title}</p>
+        <h3 class="mt-1 text-lg font-black">${card.person}</h3>
+        <p class="text-sm font-semibold" style="${p ? `color:${p.hex}` : ""}">${card.value}</p>
+      </article>
+    `;
+  }).join("");
+}
+
 
 function renderAthletes() {
   document.getElementById("athleteGrid").innerHTML = PARTICIPANTS.map(p => {
@@ -673,24 +793,71 @@ function setupForm() {
 
   document.getElementById("addBtn").addEventListener("click", addActivity);
   document.getElementById("modalBackdrop").addEventListener("click", closeProfile);
+  const quickMemberSelect = document.getElementById("quickMember");
+  if (quickMemberSelect) {
+    quickMemberSelect.innerHTML = PARTICIPANTS.map(p => `<option value="${p.name}">${p.name}</option>`).join("");
+  }
+
+  document.querySelectorAll(".quick-activity-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      quickSelectedType = btn.dataset.quickType;
+
+      document.querySelectorAll(".quick-activity-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+
+      document.getElementById("quickDistance").placeholder = quickSelectedType === "swim" ? "Meters" : "Miles";
+    });
+  });
+
+  const quickLogFab = document.getElementById("quickLogFab");
+  const quickLogModal = document.getElementById("quickLogModal");
+  const quickLogBackdrop = document.getElementById("quickLogBackdrop");
+  const quickLogClose = document.getElementById("quickLogClose");
+
+  function openQuickLog() {
+    quickLogModal.classList.remove("hidden");
+    document.body.classList.add("no-scroll");
+    setTimeout(() => document.getElementById("quickDistance").focus(), 150);
+  }
+
+  function closeQuickLog() {
+    quickLogModal.classList.add("hidden");
+    document.body.classList.remove("no-scroll");
+  }
+
+  if (quickLogFab) quickLogFab.addEventListener("click", openQuickLog);
+  if (quickLogBackdrop) quickLogBackdrop.addEventListener("click", closeQuickLog);
+  if (quickLogClose) quickLogClose.addEventListener("click", closeQuickLog);
+
+  const quickAddBtn = document.getElementById("quickAddBtn");
+  if (quickAddBtn) {
+    quickAddBtn.addEventListener("click", async () => {
+      const member = document.getElementById("quickMember").value;
+      const distanceInput = document.getElementById("quickDistance");
+      const distance = parseFloat(distanceInput.value);
+      const message = document.getElementById("quickFormMessage");
+
+      const saved = await saveActivity(member, quickSelectedType, distance, message);
+      if (saved) {
+        distanceInput.value = "";
+        closeQuickLog();
+      }
+    });
+  }
+
 }
 
-async function addActivity() {
-  const member = document.getElementById("member").value;
-  const distanceInput = document.getElementById("distance");
-  const distance = parseFloat(distanceInput.value);
-  const message = document.getElementById("formMessage");
-
+async function saveActivity(member, type, distance, messageEl) {
   if (!distance || distance <= 0) {
-    message.textContent = "Enter a distance greater than 0.";
-    message.className = "mt-3 text-sm font-semibold text-red-600";
-    return;
+    messageEl.textContent = "Enter a distance greater than 0.";
+    messageEl.className = "mt-3 text-sm font-semibold text-red-600";
+    return false;
   }
 
   const entry = {
     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2),
     member,
-    type: selectedType,
+    type,
     distance,
     createdAt: new Date().toISOString()
   };
@@ -701,88 +868,26 @@ async function addActivity() {
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
 
-    distanceInput.value = "";
-    message.textContent = `${member}'s ${selectedType} was added.`;
-    message.className = "mt-3 text-sm font-semibold text-emerald-600";
-    showToast(`${iconFor(selectedType)} ${member} ${actionWord(selectedType)} ${formatDistance(selectedType, distance)}`);
+    messageEl.textContent = `${member}'s ${type} was added.`;
+    messageEl.className = "mt-3 text-sm font-semibold text-emerald-600";
+    showToast(`${iconFor(type)} ${member} ${actionWord(type)} ${formatDistance(type, distance)}`);
+    return true;
   } catch (error) {
     console.error(error);
-    message.textContent = "Something went wrong saving this activity.";
-    message.className = "mt-3 text-sm font-semibold text-red-600";
+    messageEl.textContent = "Something went wrong saving this activity.";
+    messageEl.className = "mt-3 text-sm font-semibold text-red-600";
+    return false;
   }
 }
 
-async function replaceFeed(nextFeed) {
-  await GROUP_DOC.set({
-    feed: nextFeed,
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }, { merge: true });
-}
+async function addActivity() {
+  const member = document.getElementById("member").value;
+  const distanceInput = document.getElementById("distance");
+  const distance = parseFloat(distanceInput.value);
+  const message = document.getElementById("formMessage");
 
-async function deleteActivity(index) {
-  const item = state.feed[index];
-  const entry = normalizeFeedItem(item);
-  const label = entry
-    ? `${entry.member}'s ${formatDistance(entry.type, entry.distance)} ${entry.type}`
-    : "this activity";
-
-  const ok = confirm(`Delete ${label}?`);
-  if (!ok) return;
-
-  const nextFeed = [...state.feed];
-  nextFeed.splice(index, 1);
-
-  try {
-    await replaceFeed(nextFeed);
-    showToast("Activity deleted.");
-  } catch (error) {
-    console.error(error);
-    showToast("Could not delete activity.");
-  }
-}
-
-async function editActivity(index) {
-  const item = state.feed[index];
-  const entry = normalizeFeedItem(item);
-
-  if (!entry) {
-    showToast("This older activity cannot be edited. Delete it and re-add it.");
-    return;
-  }
-
-  const unit = entry.type === "swim" ? "meters" : "miles";
-  const newDistanceText = prompt(
-    `Update ${entry.member}'s ${entry.type} distance (${unit}):`,
-    entry.distance
-  );
-
-  if (newDistanceText === null) return;
-
-  const newDistance = parseFloat(newDistanceText);
-
-  if (!newDistance || newDistance <= 0) {
-    showToast("Enter a valid distance greater than 0.");
-    return;
-  }
-
-  const nextFeed = [...state.feed];
-  nextFeed[index] = {
-    ...(typeof item === "object" ? item : {}),
-    id: item && item.id ? item.id : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
-    member: entry.member,
-    type: entry.type,
-    distance: newDistance,
-    createdAt: entry.createdAt || new Date().toISOString(),
-    editedAt: new Date().toISOString()
-  };
-
-  try {
-    await replaceFeed(nextFeed);
-    showToast("Activity updated.");
-  } catch (error) {
-    console.error(error);
-    showToast("Could not update activity.");
-  }
+  const saved = await saveActivity(member, selectedType, distance, message);
+  if (saved) distanceInput.value = "";
 }
 
 function showToast(text) {
@@ -797,8 +902,8 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V12 mobile-app-pwa");
-window.LAZYMAN_VERSION = "V12 mobile-app-pwa";
+console.log("LazyMan Ironman loaded: V13.1 quick-log-layout");
+window.LAZYMAN_VERSION = "V13.1 quick-log-layout";
 
 
 /* =========================
