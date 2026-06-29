@@ -800,7 +800,7 @@ function renderFeed() {
           <div class="rounded-2xl bg-slate-50 p-3 text-sm text-slate-700">
             <p>${item}</p>
             <div class="mt-2 flex gap-2">
-              <button onclick="deleteActivity(${index})" class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">Delete</button>
+              <button type="button" data-feed-action="delete" data-feed-index="${index}" class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">Delete</button>
             </div>
           </div>
         `;
@@ -818,8 +818,8 @@ function renderFeed() {
             <p class="text-xs text-slate-500">${timeLabel(entry.createdAt)}${edited}</p>
 
             <div class="mt-2 flex gap-2">
-              <button onclick="editActivity(${index})" class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">Edit</button>
-              <button onclick="deleteActivity(${index})" class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">Delete</button>
+              <button type="button" data-feed-action="edit" data-feed-index="${index}" class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-600 shadow-sm">Edit</button>
+              <button type="button" data-feed-action="delete" data-feed-index="${index}" class="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">Delete</button>
             </div>
           </div>
         </div>
@@ -1012,6 +1012,20 @@ function setupForm() {
     });
   }
 
+  const feedEl = document.getElementById("feed");
+  if (feedEl) {
+    feedEl.addEventListener("click", event => {
+      const button = event.target.closest("[data-feed-action]");
+      if (!button) return;
+
+      const index = Number(button.dataset.feedIndex);
+      if (!Number.isInteger(index)) return;
+
+      if (button.dataset.feedAction === "edit") editActivity(index);
+      if (button.dataset.feedAction === "delete") deleteActivity(index);
+    });
+  }
+
 }
 
 async function saveActivity(member, type, distance, messageEl) {
@@ -1057,6 +1071,79 @@ async function addActivity() {
   if (saved) distanceInput.value = "";
 }
 
+async function replaceFeed(nextFeed) {
+  await GROUP_DOC.set({
+    feed: nextFeed,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+}
+
+async function deleteActivity(index) {
+  const item = state.feed[index];
+  const entry = normalizeFeedItem(item);
+  const label = entry
+    ? `${entry.member}'s ${formatDistance(entry.type, entry.distance)} ${entry.type}`
+    : "this activity";
+
+  const ok = confirm(`Delete ${label}?`);
+  if (!ok) return;
+
+  const nextFeed = [...state.feed];
+  nextFeed.splice(index, 1);
+
+  try {
+    await replaceFeed(nextFeed);
+    showToast("Activity deleted.");
+  } catch (error) {
+    console.error(error);
+    showToast("Could not delete activity.");
+  }
+}
+
+async function editActivity(index) {
+  const item = state.feed[index];
+  const entry = normalizeFeedItem(item);
+
+  if (!entry) {
+    showToast("This older activity cannot be edited. Delete it and re-add it.");
+    return;
+  }
+
+  const unit = entry.type === "swim" ? "meters" : "miles";
+  const newDistanceText = prompt(
+    `Update ${entry.member}'s ${entry.type} distance (${unit}):`,
+    entry.distance
+  );
+
+  if (newDistanceText === null) return;
+
+  const newDistance = parseFloat(newDistanceText);
+
+  if (!newDistance || newDistance <= 0) {
+    showToast("Enter a valid distance greater than 0.");
+    return;
+  }
+
+  const nextFeed = [...state.feed];
+  nextFeed[index] = {
+    ...(typeof item === "object" ? item : {}),
+    id: item && item.id ? item.id : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())),
+    member: entry.member,
+    type: entry.type,
+    distance: newDistance,
+    createdAt: entry.createdAt || new Date().toISOString(),
+    editedAt: new Date().toISOString()
+  };
+
+  try {
+    await replaceFeed(nextFeed);
+    showToast("Activity updated.");
+  } catch (error) {
+    console.error(error);
+    showToast("Could not update activity.");
+  }
+}
+
 function showToast(text) {
   const toast = document.getElementById("toast");
   toast.textContent = text;
@@ -1069,8 +1156,8 @@ function showToast(text) {
 
 setupForm();
 
-console.log("LazyMan Ironman loaded: V14 fixed community-celebrations");
-window.LAZYMAN_VERSION = "V14 fixed community-celebrations";
+console.log("LazyMan Ironman loaded: V14.1 edit-delete-fix");
+window.LAZYMAN_VERSION = "V14.1 edit-delete-fix";
 
 
 /* =========================
@@ -1116,3 +1203,6 @@ document.addEventListener("click", async event => {
     if (installCard) installCard.classList.add("hidden");
   }
 });
+
+window.editActivity = editActivity;
+window.deleteActivity = deleteActivity;

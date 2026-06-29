@@ -1,10 +1,10 @@
-const CACHE_NAME = "lazyman-ironman-v14-fixed";
+const CACHE_NAME = "lazyman-ironman-v14-1-1";
 const ASSETS = [
   "./",
   "./index.html",
-  "./style.css?v=14-fixed",
-  "./app.js?v=14-fixed",
-  "./manifest.json?v=14-fixed",
+  "./style.css?v=14-1-1",
+  "./app.js?v=14-1-1",
+  "./manifest.json?v=14-1-1",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];

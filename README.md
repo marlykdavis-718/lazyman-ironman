@@ -1,16 +1,8 @@
-# LazyMan Ironman V14 Fixed
+# LazyMan Ironman V14.1
 
-Fixes a JavaScript syntax issue from the first V14 package.
-
-Keeps:
-- Live activity banners
-- New leader banner
-- Milestone celebration overlay
-- Quick-log button
-- Weekly recap
-- PWA install
-- Profile photos
-- Edit/delete
+Fix:
+- Edit/Delete buttons now use safe event listeners instead of inline onclick handlers.
+- Keeps V14 community features.
 
 Upload/replace all files from this package.
 After upload, hard refresh and reopen the installed mobile app.
