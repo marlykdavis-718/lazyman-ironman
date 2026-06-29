@@ -1,20 +1,23 @@
-# LazyMan Ironman V10
+# LazyMan Ironman V11
 
-V10 adds profile photos throughout the app.
+V11 adds polished circular profile photos throughout the app.
 
 Expected photo paths:
-- assets/profile-pictures/marly.jpg
-- assets/profile-pictures/laura.jpg
-- assets/profile-pictures/nick.jpg
-- assets/profile-pictures/katie.jpg
-- assets/profile-pictures/gunnar.jpg
-- assets/profile-pictures/taylor.jpg
-- assets/profile-pictures/dwayne.jpg
+- assets/profile-pictures/marly.png
+- assets/profile-pictures/laura.png
+- assets/profile-pictures/nick.png
+- assets/profile-pictures/katie.png
+- assets/profile-pictures/gunnar.png
+- assets/profile-pictures/taylor.png
+- assets/profile-pictures/dwayne.png
 
-Upload and replace:
+Upload/replace:
 - index.html
 - style.css
 - app.js
 - README.md
 
-Your uploaded profile pictures stay in the `assets/profile-pictures/` folder.
+Also upload the circular PNG profile pictures into:
+assets/profile-pictures/
+
+After upload, hard refresh with Ctrl + Shift + R.
